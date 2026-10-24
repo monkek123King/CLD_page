@@ -4,14 +4,14 @@ Static, fully pre-computed. No build step, no server-side inference.
 
 ## Run locally
 
-Download or copy the **whole `page/` folder**, then double-click `index.html`.
+Download or copy the **whole `CLD_page/` folder**, then double-click `index.html`.
 The demos, layer editing, and PNG export work directly over `file://` without
 starting a server. Keep `static/` alongside `index.html`.
 
 HTTP hosting still works as well:
 
 ```bash
-cd paper/page
+cd CLD_page
 python -m http.server 8000
 # open http://localhost:8000
 ```
@@ -22,6 +22,8 @@ and data URLs for the studio layers, allowing canvas PNG export without local
 file origin restrictions. Other images load directly from `static/`.
 HTTP pages continue to fetch `static/demo/manifest.json` and do not load the bundle.
 Google Fonts is optional; without internet access, the page uses system fonts.
+
+The project root serves the default page. The previous version remains in `old/`.
 
 ## Layout
 
@@ -59,7 +61,7 @@ After manually changing `manifest.json` or studio layer images, refresh the
 local bundle with this standard-library-only command (no inference needed):
 
 ```bash
-python paper/page/build_offline.py  # from the repository root
+python build_offline.py  # from the CLD_page directory
 ```
 
 Note: the page's earlier `static/figures/case_*/layer_*_rgba.png` assets were **RGB with the

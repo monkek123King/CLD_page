@@ -740,13 +740,13 @@
     var s = ['<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Inference time versus number of layers">'];
     for (var t = 0; t <= 360; t += 90) {
       s.push('<line x1="' + P.l + '" y1="' + Y(t) + '" x2="' + (W - P.r) + '" y2="' + Y(t) +
-             '" stroke="#2b3040" stroke-width="1"/>');
-      s.push('<text x="' + (P.l - 9) + '" y="' + (Y(t) + 4) + '" fill="#868fa6" font-size="11" text-anchor="end">' + t + 's</text>');
+             '" stroke="var(--panel-line)" stroke-width="1"/>');
+      s.push('<text x="' + (P.l - 9) + '" y="' + (Y(t) + 4) + '" fill="var(--panel-mut)" font-size="11" text-anchor="end">' + t + 's</text>');
     }
     [2,10,20,30,37].forEach(function (l) {
-      s.push('<text x="' + X(l) + '" y="' + (H - 14) + '" fill="#868fa6" font-size="11" text-anchor="middle">' + l + '</text>');
+      s.push('<text x="' + X(l) + '" y="' + (H - 14) + '" fill="var(--panel-mut)" font-size="11" text-anchor="middle">' + l + '</text>');
     });
-    s.push('<text x="' + (W / 2) + '" y="' + (H - 1) + '" fill="#868fa6" font-size="11" text-anchor="middle">number of layers</text>');
+    s.push('<text x="' + (W / 2) + '" y="' + (H - 1) + '" fill="var(--panel-mut)" font-size="11" text-anchor="middle">number of layers</text>');
 
     var qp = QW.map(function (d) { return X(d[0]) + ',' + Y(d[1]); }).join(' ');
     s.push('<polyline points="' + qp + '" fill="none" stroke="#e0484b" stroke-width="2.5" stroke-linejoin="round"/>');
@@ -976,7 +976,7 @@
         Array.prototype.forEach.call(document.querySelectorAll('.needs-demo'), function (n) {
           n.innerHTML = '';
           var message = el('div', 'app-body');
-          message.style.cssText = 'text-align:center;color:#868fa6';
+          message.style.cssText = 'text-align:center;color:var(--panel-mut)';
           message.textContent = 'Demo could not start. ' + e.message;
           n.appendChild(message);
         });
