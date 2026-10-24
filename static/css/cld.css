@@ -102,9 +102,9 @@ h1.title span{ color:#86868b; }
 .visual-label{ display:block; margin-top:22px; color:var(--muted); font-size:12px; font-weight:500; letter-spacing:.01em; }
 .visual-arrow{ color:#b5b5bb; font-size:30px; font-weight:400; }
 .hero-layers{ position:relative; width:260px; height:260px; margin-right:70px; transform:rotateX(48deg) rotateZ(-33deg); transform-style:preserve-3d; }
-.hero-plate{ position:absolute; inset:0; transform:translateZ(calc(var(--depth)*40px)); border-radius:13px; background:rgba(255,255,255,.18); border:1px solid rgba(140,140,150,.22); box-shadow:0 12px 26px rgba(29,29,31,.10); overflow:hidden; transition:transform .7s cubic-bezier(.2,.7,.3,1); }
+.hero-plate{ position:absolute; inset:0; transform:translateZ(calc(var(--depth)*16px)); border-radius:13px; background:transparent; border:1px solid rgba(140,140,150,.22); box-shadow:0 12px 26px rgba(29,29,31,.10); overflow:hidden; transition:transform .7s cubic-bezier(.2,.7,.3,1); }
 .hero-plate img{ width:100%; height:100%; }
-.hero-visual:hover .hero-plate{ transform:translateZ(calc(var(--depth)*50px)); }
+.hero-visual:hover .hero-plate{ transform:translateZ(calc(var(--depth)*20px)); }
 .layers-label{ position:absolute; bottom:35px; left:62%; }
 .paper-title{ margin:12px auto 35px; max-width:65ch; color:var(--muted); font-size:13px; line-height:1.6; }
 .stat-strip{ display:grid; grid-template-columns:repeat(4,1fr); padding:42px 0; border-top:1px solid var(--line); }
@@ -686,8 +686,8 @@ footer.ft{ padding:40px 0; background:#f5f5f7; font-size:12px; }
   .hero-visual{ height:310px; gap:28px; margin-top:24px; }
   .hero-input{ width:32%; } .visual-arrow{ display:none; }
   .hero-layers{ width:34%; height:auto; aspect-ratio:1; margin:0 12px 0 0; }
-  .hero-plate{ transform:translateZ(calc(var(--depth)*23px)); border-radius:8px; }
-  .hero-visual:hover .hero-plate{ transform:translateZ(calc(var(--depth)*23px)); }
+  .hero-plate{ transform:translateZ(calc(var(--depth)*9px)); border-radius:8px; }
+  .hero-visual:hover .hero-plate{ transform:translateZ(calc(var(--depth)*9px)); }
   .visual-label{ font-size:10px; margin-top:15px; } .layers-label{ left:auto; right:0; bottom:32px; width:52%; }
   .paper-title{ font-size:11px; margin:0 auto 28px; }
   .stat-strip{ grid-template-columns:1fr 1fr; padding:8px 0 20px; row-gap:28px; }
