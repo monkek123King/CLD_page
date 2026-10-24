@@ -70,8 +70,7 @@
       <span class="eyebrow">One image in, a layer stack out</span>
       <h2 class="sec-title">Peel a finished design apart</h2>
       <p class="sec-sub">
-        Every box on the left is a layer request. Hover a box, a thumbnail, or a plate in the
-        stack to see which element it owns &mdash; then drag the slider to pull the stack apart.
+        Hover to match boxes with layers. Drag the slider to separate the stack.
       </p>
     </div>
 
@@ -120,22 +119,11 @@
     <div class="sec-head"><span class="eyebrow">Abstract</span></div>
     <div class="prose">
       <p>
-        This work presents <b>Controllable Layer Decomposition (CLD)</b>, a method for achieving fine-grained
-        and controllable multi-layer separation of raster images. In practical workflows, designers generate and
-        edit each RGBA layer independently before compositing them into a final raster image. However, this process
-        is irreversible: once composited, layer-level editing is no longer possible. Prior works either adopt a
-        two-stage pipeline based on image matting and inpainting, or specify the number of layers and let a DiT
-        generate all layers end-to-end in a single pass; none of these approaches can jointly balance decomposition
-        quality, efficiency, and controllability.
-      </p>
-      <p>
-        To address these challenges, we propose two key modules: <b>LayerDecompose-DiT (LD-DiT)</b>, which decouples
-        image elements into distinct layers and enables fine-grained control; and the <b>Multi-Layer Conditional
-        Adapter (MLCA)</b>, which injects target image information into multi-layer tokens to achieve precise
-        conditional generation. To enable a comprehensive evaluation, we build a new benchmark and introduce tailored
-        evaluation metrics. Experimental results show that CLD consistently outperforms existing methods in
-        decomposition quality, efficiency, and controllability. Furthermore, the separated layers can be directly
-        manipulated in commonly used design tools such as PowerPoint.
+        <b>CLD</b> separates a flattened image into editable RGBA layers, guided by bounding boxes.
+        LayerDecompose-DiT generates region-specific layers, while the Multi-Layer Conditional Adapter
+        aligns them with the input image. Detector-predicted or user-defined boxes control the decomposition.
+        A new benchmark evaluates quality, efficiency, and controllability. The recovered layers can be
+        edited independently in tools such as PowerPoint.
       </p>
     </div>
   </div>
@@ -146,21 +134,17 @@
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Method</span>
-      <h2 class="sec-title">Boxes make an ill-posed problem controllable</h2>
+      <h2 class="sec-title">Bounding boxes guide each layer</h2>
       <p class="sec-sub">
-        The same raster image can be explained by infinitely many layer stacks. A bounding box is the cheapest
-        way for a designer to say which explanation they want &mdash; and it is what lets CLD generate each layer
-        inside its own region instead of at full resolution.
+        Each box defines a layer. CLD generates within these regions to reduce computation.
       </p>
     </div>
 
     <figure class="figure" style="margin:0">
       <img src="static/figures/framework.jpg" alt="CLD architecture: LD-DiT backbone with the MLCA control branch">
       <figcaption>
-        <b>(a)</b> The LD-DiT backbone crops the latent by bounding box, concatenates every layer into one token
-        sequence, and denoises them jointly; Layer-Aware RoPE indexes each token by <code>[layer, h, w]</code>.
-        <b>(b)</b> MLCA crops the conditional image feature with the <em>same</em> boxes, so guidance tokens stay
-        pixel-aligned with the layer tokens they steer, and fuses them additively with &lambda;&nbsp;=&nbsp;0.9.
+        <b>(a) LD-DiT</b> jointly denoises region-cropped layer tokens.
+        <b>(b) MLCA</b> aligns image conditioning with each layer&rsquo;s bounding box.
       </figcaption>
     </figure>
 
@@ -168,21 +152,17 @@
       <div class="card">
         <div class="n">1</div>
         <h3>Region-aware tokens</h3>
-        <p>Each layer is generated only inside its box, cutting the dominant cost from a global
-           <em>O(N&middot;HW)</em> to a local <em>O(&sum;H<sub>i</sub>W<sub>i</sub>)</em>. That is why 37 layers
-           still fit on one GPU.</p>
+        <p>Generate tokens only within each box, supporting up to 37 layers on one GPU.</p>
       </div>
       <div class="card">
         <div class="n">2</div>
         <h3>Aligned conditioning</h3>
-        <p>MLCA beats cross-attention and shared-KV injection by a wide margin (28.8 vs 14.8 PSNR), because
-           additive, box-aligned guidance preserves the tight spatial correspondence each layer needs.</p>
+        <p>MLCA aligns image features with layer tokens to preserve spatial detail.</p>
       </div>
       <div class="card">
         <div class="n">3</div>
         <h3>Dual-condition CFG</h3>
-        <p>The unconditional branch keeps the image and drops only the text. This anchors both branches to the
-           same layout and stops background colour from leaking into foreground layers.</p>
+        <p>Keep image conditioning in both branches to reduce background colour leakage.</p>
       </div>
     </div>
   </div>
@@ -193,11 +173,9 @@
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Two ways in</span>
-      <h2 class="sec-title">Let the model find the layers, or say exactly what you want</h2>
+      <h2 class="sec-title">Automatic or user-guided</h2>
       <p class="sec-sub">
-        <b>Mode A</b> runs a fine-tuned Qwen3-VL-8B detector and decomposes with no human input.
-        <b>Mode B</b> takes boxes a designer drew. Same weights, same forward pass &mdash; only the boxes differ.
-        Click any layer tile to enlarge it.
+        Compare detector-predicted boxes with user-defined boxes. Click a layer to enlarge it.
       </p>
     </div>
 
@@ -245,8 +223,7 @@
       <span class="eyebrow">Robustness</span>
       <h2 class="sec-title">Sloppy boxes are fine</h2>
       <p class="sec-sub">
-        Nobody draws pixel-accurate rectangles. Push every corner outward by up to 20% of the side length
-        and watch the layers hold &mdash; click any layer tile to inspect it full size.
+        Increase box noise from 0% to 20% to compare the recovered layers.
       </p>
     </div>
 
@@ -276,7 +253,6 @@
           <div class="pane rb-output">
             <div class="pane-head"><span>Resulting layers</span></div>
             <div class="pane-body"><div class="strip" id="rb-strip"></div></div>
-            <div class="metric-row" id="rb-metrics" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -288,11 +264,10 @@
 <section class="alt" id="studio">
   <div class="wrap">
     <div class="sec-head center">
-      <span class="eyebrow">What designers actually do next</span>
-      <h2 class="sec-title">Edit the result like it was never flattened</h2>
+      <span class="eyebrow">Layer editing</span>
+      <h2 class="sec-title">Edit each layer independently</h2>
       <p class="sec-sub">
-        These are the real RGBA layers CLD produced, re-composited live in your browser. Drag an element,
-        scale it, hide it, duplicate it, restack it &mdash; the same operations the paper performs in PowerPoint.
+        Edit the recovered layers in your browser, then export the composition as a PNG.
       </p>
     </div>
 
@@ -341,11 +316,10 @@
           </div>
           <ul class="llist" id="st-list" style="list-style:none;margin:0"></ul>
           <div class="hint">
-            Click an element to select &middot; drag to move &middot; corner handles scale,
-            edge handles stretch one axis &middot; the handle above the box rotates.<br>
-            <kbd>Shift</kbd> keeps the aspect ratio while scaling and snaps rotation to 15&deg; &middot;
-            <kbd>&larr;&rarr;&uarr;&darr;</kbd> nudge &middot; <kbd>Del</kbd> remove &middot;
-            drag <span style="color:#4b5368">&#9776;</span> to restack.
+            Drag to move. Use corners to scale, edges to stretch, and the top handle to rotate.<br>
+            <kbd>Shift</kbd> locks proportions or snaps rotation to 15&deg;.
+            Arrow keys nudge; <kbd>Del</kbd> removes.<br>
+            Drag &#9776; in the layer list to reorder.
           </div>
         </aside>
       </div>
@@ -358,10 +332,9 @@
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Efficiency</span>
-      <h2 class="sec-title">Cost grows with content, not with canvas count</h2>
+      <h2 class="sec-title">Up to 37 layers on one GPU</h2>
       <p class="sec-sub">
-        Full-resolution multi-layer models pay for every layer at <em>H&times;W</em>. CLD pays only for the
-        boxes, so the curve stays almost flat where the baseline runs out of memory.
+        Region-based generation reduces token usage. Compare inference time as layer count grows.
       </p>
     </div>
 
@@ -376,7 +349,7 @@
             <div id="eff-chart"></div>
             <div class="legend">
               <span><i style="background:#e0484b"></i>Qwen-Image-Layered</span>
-              <span><i style="background:#00a7bd"></i>CLD (ours) &mdash; min / avg / max over the test split</span>
+              <span><i style="background:#00a7bd"></i>CLD (ours)</span>
             </div>
           </div>
           <div>
@@ -386,9 +359,8 @@
               <div class="metric"><span>Avg time</span><b>47.6 s</b></div>
             </div>
             <p style="color:var(--panel-mut);font-size:14px;line-height:1.65;margin-top:16px">
-              Measured over the 1,000-image PrismLayersPro test split. The baseline needs 24,576 tokens to
-              reach six layers and runs out of memory at seven; CLD averages 10,986 tokens for eleven layers
-              and peaks at 37 layers in 24,268 tokens.
+              On the 1,000-image PrismLayersPro test split, CLD reaches 37 layers.
+              Qwen-Image-Layered runs out of memory at seven.
             </p>
           </div>
         </div>
@@ -417,10 +389,8 @@
       </table>
     </div>
     <p class="fnote">
-      PrismLayersPro test split. <b>Bbox</b> is the box source (GT = ground truth, Pred = our fine-tuned
-      Qwen3-VL detector). <em>LayerD metrics</em> on the left, <em>Q-Insight</em> perceptual scores on the right.
-      Note that Qwen-Image-Layered degrades as the requested layer count rises (IoU 0.63 &rarr; 0.49), while
-      CLD stays anchored to its boxes.
+      PrismLayersPro test split. GT = ground-truth boxes; Pred = Qwen3-VL detector boxes.
+      Reconstruction metrics: RGB_L1, IoU, Overall. Q-Insight scores: Semantic, Visual, Editability.
     </p>
   </div>
 </section>
@@ -432,8 +402,7 @@
       <span class="eyebrow">Gallery</span>
       <h2 class="sec-title">More decompositions</h2>
       <p class="sec-sub">
-        A separate set of results. Hover the thumbnails under a card to step through that image&rsquo;s
-        layers; click any thumbnail, or the card itself, to enlarge it.
+        Hover to preview individual layers. Click to enlarge.
       </p>
     </div>
     <div class="gal needs-demo" id="gallery"></div>

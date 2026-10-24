@@ -175,8 +175,7 @@
       });
 
       count.textContent = (c.nFg + 1) + ' layers';
-      cap.textContent = c.caption ? '“' + c.caption + '”' :
-        'Text prompt auto-extracted from the input image by a VLM.';
+      cap.textContent = c.nFg + ' foreground layers + background';
     }
 
     spread.oninput = function () { stack.style.setProperty('--spread', spread.value + 'px'); };
@@ -208,22 +207,9 @@
       if (c.nPred) layerStrip(aStrip, dir, 'pred', c.nPred, 'Case ' + (c.n + 1) + ' · detector boxes');
       else aStrip.innerHTML = '<p class="sz">No detector run for this case.</p>';
 
-      var d = c.nPred - c.nFg;
-      var lead = 'The fine-tuned <b>Qwen3-VL-8B</b> detector proposed <b>' + c.nPred +
-                 '</b> regions; the reference annotation has <b>' + c.nFg + '</b>. ';
-      if (d === 0) {
-        note.innerHTML = lead + 'Both box sets agree on the layer count here. CLD consumes either one ' +
-          'unchanged \u2014 no retraining, no per-image tuning.';
-      } else if (d > 0) {
-        note.innerHTML = lead + 'It <b>split</b> regions the annotation keeps whole, giving ' + d +
-          ' extra layer' + (d === 1 ? '' : 's') + ' \u2014 a finer decomposition, not a wrong one. Because ' +
-          'every box is an independent layer request, the split changes only the layers it touches; the rest, ' +
-          'including the background, comes out the same.';
-      } else {
-        note.innerHTML = lead + 'It <b>merged</b> elements the annotation separates, giving ' + (-d) +
-          ' fewer layer' + (-d === 1 ? '' : 's') + '. The decomposition stays coherent \u2014 a merged region ' +
-          'simply yields one coarser layer, and a user who wants those elements apart just draws the extra box.';
-      }
+      note.innerHTML = '<span class="mode-summary">Automatic <b>' + c.nPred + ' regions</b></span>' +
+        '<span class="mode-summary">User-defined <b>' + c.nFg + ' regions</b></span>' +
+        '<span class="mode-caption">Same CLD model. Your boxes control the layer granularity.</span>';
     }
     caseTabs(tabsHost, load);
   }
@@ -231,14 +217,6 @@
   /* ========================================================
      3. Robustness to box perturbation
      ======================================================== */
-  var RB_METRICS = {
-    0:  { psnr:'28.818', ssim:'0.894', fid:'14.550', iou:'0.903', f1:'0.943', d:null },
-    10: { psnr:'28.760', ssim:'0.893', fid:'14.748', iou:'0.900', f1:'0.941',
-          d:{psnr:'-0.2%',ssim:'-0.1%',fid:'+1.4%',iou:'-0.4%',f1:'-0.2%'} },
-    20: { psnr:'28.643', ssim:'0.891', fid:'15.306', iou:'0.895', f1:'0.937',
-          d:{psnr:'-0.6%',ssim:'-0.4%',fid:'+5.2%',iou:'-0.9%',f1:'-0.6%'} }
-  };
-
   function buildRobust() {
     var root = q('#robust'); if (!root) return;
     var tabsHost = q('#rb-tabs');
@@ -246,26 +224,32 @@
     var strip  = q('#rb-strip');
     var sl     = q('#rb-slider');
     var ticks  = q('#rb-ticks');
-    var mrow   = q('#rb-metrics');
     var cur = null;
     var LEVELS = [0, 10, 20];
 
     LEVELS.forEach(function (v) { ticks.appendChild(el('span', '', v + '%')); });
 
-    function metrics(lv) {
-      var m = RB_METRICS[lv];
-      mrow.innerHTML = '';
-      if (!m) {
-        mrow.innerHTML = '<div class="metric" style="flex:1 1 100%"><span>Quantitative</span>' +
-          '<b style="font-size:14px;font-weight:600">Reported in the paper up to 20%; ' +
-          'the panels above show qualitative behaviour at ' + lv + '%.</b></div>';
+    // Fit the largest square tiles into the space beside the input panel.
+    function layoutLayers() {
+      if (window.innerWidth <= 900) {
+        strip.style.removeProperty('--rb-tile');
         return;
       }
-      [['PSNR','psnr'],['SSIM','ssim'],['FID','fid'],['IoU','iou'],['F1','f1']].forEach(function (p) {
-        var d = m.d ? '<em>' + m.d[p[1]] + '</em>' : '<em>&nbsp;</em>';
-        mrow.appendChild(el('div','metric','<span>'+p[0]+'</span><b>'+m[p[1]]+'</b>'+d));
-      });
+      var count = strip.children.length;
+      var width = strip.clientWidth, height = strip.clientHeight;
+      if (!count || !width || !height) return;
+      var size = 0, gap = 12;
+      for (var n = 1; n <= count; n++) {
+        var rows = Math.ceil(count / n);
+        var candidate = Math.min((width - gap * (n - 1)) / n,
+                                 (height - gap * (rows - 1)) / rows);
+        if (candidate > size) size = candidate;
+      }
+      strip.style.setProperty('--rb-tile', Math.floor(size) + 'px');
     }
+    var resizeObserver = new ResizeObserver(layoutLayers);
+    resizeObserver.observe(strip);
+    window.addEventListener('resize', layoutLayers);
 
     function render(lv) {
       if (!cur) return;
@@ -284,7 +268,7 @@
       var sub = lv === 0 ? 'layers' : 'p' + lv;
       layerStrip(strip, dir, sub, c.nFg,
                  'Case ' + (c.n + 1) + ' · ' + (lv === 0 ? 'exact boxes' : lv + '% box perturbation'));
-      metrics(lv);
+      layoutLayers();
     }
 
     sl.oninput = function () { render(LEVELS[+sl.value]); };

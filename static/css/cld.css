@@ -129,7 +129,7 @@ h1.title span{ color:#86868b; }
   background:var(--panel);
   border-bottom:1px solid var(--panel-line);
 }
-.dots{ display:none; }
+.dots{ display:flex; align-items:center; gap:7px; flex:none; }
 .dots i{ width:11px; height:11px; border-radius:50%; display:block; }
 .dots i:nth-child(1){ background:#ff5f57; }
 .dots i:nth-child(2){ background:#febc2e; }
@@ -269,14 +269,18 @@ input[type=range].rng::-moz-range-thumb{
    2. Mode A / Mode B
    ============================================================ */
 .mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+#modes .strip{ display:flex; flex-wrap:wrap; justify-content:center; align-content:flex-start; gap:7px; }
+#modes .strip .cell{ flex:0 0 76px; width:76px; max-width:100%; }
 @media (max-width:860px){ .mode-grid{ grid-template-columns:1fr; } }
 .mode-note{
-  display:flex; gap:10px; align-items:flex-start;
-  margin-top:14px; padding:12px 14px; border-radius:var(--r-s);
+  display:flex; flex-wrap:wrap; gap:12px 24px; align-items:center;
+  margin:16px 0 0; padding:16px 18px; border-radius:var(--r-s);
   background:var(--panel-2); border:1px solid var(--panel-line);
-  font-size:13.5px; color:var(--panel-mut); line-height:1.55;
+  font-size:13px; color:var(--panel-mut); line-height:1.5;
 }
+.mode-summary{ display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
 .mode-note b{ color:var(--panel-ink); font-weight:650; }
+.mode-caption{ flex:1 1 280px; }
 
 /* ============================================================
    3. Robustness
@@ -285,12 +289,14 @@ input[type=range].rng::-moz-range-thumb{
 .rb-input,.rb-output{ display:flex; flex-direction:column; min-width:0; }
 .rb-input>.pane-body{ flex:1; }
 .rb-controls{ padding:16px 14px; border-top:1px solid var(--panel-line); }
-.rb-output>.pane-body{ flex:1; display:flex; flex-direction:column; justify-content:center; }
-#rb-metrics{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin:0; padding:14px; border-top:1px solid var(--panel-line); }
-#rb-metrics .metric{ min-width:0; padding:12px 10px; }
-#rb-metrics .metric b{ font-size:22px; }
-@media(max-width:480px){ #rb-metrics{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
-@media (max-width:900px){ .rb{ grid-template-columns:1fr; } }
+.rb-output>.pane-body{ flex:1; min-height:0; position:relative; }
+#rb-strip{ position:absolute; inset:14px; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; align-items:flex-start; gap:12px; }
+#rb-strip .cell{ flex:0 0 var(--rb-tile,calc((100% - 24px)/3)); width:var(--rb-tile,calc((100% - 24px)/3)); aspect-ratio:1; border-radius:12px; }
+#rb-strip .cell img{ height:auto; object-fit:contain; }
+@media (max-width:900px){
+  .rb{ grid-template-columns:1fr; }
+  #rb-strip{ position:static; }
+}
 .ticks{ display:flex; justify-content:space-between; margin-top:7px; }
 .ticks span{ font-size:11px; color:var(--panel-mut); font-family:ui-monospace,Menlo,monospace; }
 .ticks span.on{ color:var(--accent-2); font-weight:700; }
@@ -696,4 +702,27 @@ footer.ft{ padding:40px 0; background:#f5f5f7; font-size:12px; }
   .app-bar .tabs{ width:100%; } .tab{ min-height:36px; font-size:11px; padding-inline:12px; }
   .toolbar{ gap:7px; padding:12px; } .preset{ min-height:34px; }
   .prose{ font-size:16px; } .figure{ padding:16px; } .card{ padding:24px; }
+}
+
+/* Keep the opening composition wide; give the demos more room at the edges. */
+@media(min-width:901px){
+  main .wrap{ width:calc(100% - 48px); max-width:1080px; }
+  main .wrap-narrow{ max-width:740px; }
+  main h2.sec-title{ font-size:clamp(36px,4vw,54px); }
+  main .sec-sub{ font-size:17px; max-width:60ch; }
+  main .app-body{ padding:20px; }
+  main .app-bar{ padding:15px 20px; }
+  .explorer{ grid-template-columns:minmax(0,1fr) minmax(0,1.08fr) 180px; gap:14px; }
+  .rail{ max-height:360px; }
+  .rb{ grid-template-columns:minmax(0,360px) minmax(0,1fr); gap:16px; }
+  .studio{ grid-template-columns:minmax(0,1fr) 232px; }
+  .board{ width:min(100%,420px); }
+  .llist{ max-height:420px; }
+  .gal{ grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
+}
+@media(min-width:901px) and (max-width:1040px){
+  .explorer{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+}
+@media(max-width:480px){
+  #rb-strip{ --rb-tile:calc((100% - 12px)/2); }
 }
