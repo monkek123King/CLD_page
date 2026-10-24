@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLD &mdash; Controllable Layer Decomposition</title>
+<meta name="description" content="CLD decomposes a composited raster image into fine-grained, editable RGBA layers under bounding-box control.">
+
+<meta property="og:title" content="Controllable Layer Decomposition for Reversible Multi-Layer Image Generation"/>
+<meta property="og:description" content="Bounding-box-guided decomposition of a raster design into editable RGBA layers."/>
+<meta property="og:image" content="static/figures/show.jpg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+
+<link rel="icon" type="image/svg+xml" href="static/figures/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/cld.css">
+</head>
+
+<body>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="wrap" style="text-align:center">
+    <h1 class="title">Controllable <span class="grad">Layer Decomposition</span> for Reversible Multi-Layer Image Generation</h1>
+    <p class="subtitle">
+      Compositing is irreversible &mdash; once layers are flattened, layer-level editing is gone.
+      <b>CLD</b> puts it back: draw a box around anything in a finished raster image and get a clean,
+      editable RGBA layer, with a coherent background underneath.
+    </p>
+
+    <div class="btn-row">
+      <a class="btn" href="#studio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+        Try the interactive demo
+      </a>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat"><b>37</b><span>layers, single GPU</span></div>
+      <div class="stat"><b>48<small style="font-size:14px">s</small></b><span>avg. decomposition</span></div>
+      <div class="stat"><b>0.72</b><span>mask IoU (pred. boxes)</span></div>
+      <div class="stat"><b>&minus;0.6%</b><span>PSNR at 20% box noise</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= 1. EXPLORER ======================= -->
+<section id="explorer">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">One image in, a layer stack out</span>
+      <h2 class="sec-title">Peel a finished design apart</h2>
+      <p class="sec-sub">
+        Every box on the left is a layer request. Hover a box, a thumbnail, or a plate in the
+        stack to see which element it owns &mdash; then drag the slider to pull the stack apart.
+      </p>
+    </div>
+
+    <div class="app needs-demo">
+      <div class="app-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="app-title">cld &mdash; decomposition explorer</span>
+        <span class="spacer"></span>
+        <span class="app-title" id="exp-count"></span>
+      </div>
+      <div class="app-body">
+        <div class="tabs" id="exp-tabs" role="tablist" style="margin-bottom:16px"></div>
+
+        <div class="explorer">
+          <div class="pane">
+            <div class="pane-head"><span>Input + bounding boxes</span></div>
+            <div class="pane-body">
+              <div class="canvas-holder" id="exp-canvas"></div>
+              <p class="sz" id="exp-caption"
+                 style="margin:11px 2px 0;font-size:12.5px;color:var(--panel-mut);line-height:1.5"></p>
+            </div>
+          </div>
+
+          <div class="pane">
+            <div class="pane-head"><span>Decomposed stack</span></div>
+            <div class="stage"><div class="stack" id="exp-stack"></div></div>
+            <div class="stage-ctl">
+              <label for="exp-spread">Explode</label>
+              <input class="rng" type="range" id="exp-spread" min="0" max="34" value="15" step="1">
+            </div>
+          </div>
+
+          <div class="pane">
+            <div class="pane-head"><span>Layers</span></div>
+            <div class="rail" id="exp-rail"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ABSTRACT ======================= -->
+<section class="alt tight">
+  <div class="wrap-narrow">
+    <div class="sec-head"><span class="eyebrow">Abstract</span></div>
+    <div class="prose">
+      <p>
+        This work presents <b>Controllable Layer Decomposition (CLD)</b>, a method for achieving fine-grained
+        and controllable multi-layer separation of raster images. In practical workflows, designers generate and
+        edit each RGBA layer independently before compositing them into a final raster image. However, this process
+        is irreversible: once composited, layer-level editing is no longer possible. Prior works either adopt a
+        two-stage pipeline based on image matting and inpainting, or specify the number of layers and let a DiT
+        generate all layers end-to-end in a single pass; none of these approaches can jointly balance decomposition
+        quality, efficiency, and controllability.
+      </p>
+      <p>
+        To address these challenges, we propose two key modules: <b>LayerDecompose-DiT (LD-DiT)</b>, which decouples
+        image elements into distinct layers and enables fine-grained control; and the <b>Multi-Layer Conditional
+        Adapter (MLCA)</b>, which injects target image information into multi-layer tokens to achieve precise
+        conditional generation. To enable a comprehensive evaluation, we build a new benchmark and introduce tailored
+        evaluation metrics. Experimental results show that CLD consistently outperforms existing methods in
+        decomposition quality, efficiency, and controllability. Furthermore, the separated layers can be directly
+        manipulated in commonly used design tools such as PowerPoint.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= METHOD ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Method</span>
+      <h2 class="sec-title">Boxes make an ill-posed problem controllable</h2>
+      <p class="sec-sub">
+        The same raster image can be explained by infinitely many layer stacks. A bounding box is the cheapest
+        way for a designer to say which explanation they want &mdash; and it is what lets CLD generate each layer
+        inside its own region instead of at full resolution.
+      </p>
+    </div>
+
+    <figure class="figure" style="margin:0">
+      <img src="static/figures/framework.jpg" alt="CLD architecture: LD-DiT backbone with the MLCA control branch">
+      <figcaption>
+        <b>(a)</b> The LD-DiT backbone crops the latent by bounding box, concatenates every layer into one token
+        sequence, and denoises them jointly; Layer-Aware RoPE indexes each token by <code>[layer, h, w]</code>.
+        <b>(b)</b> MLCA crops the conditional image feature with the <em>same</em> boxes, so guidance tokens stay
+        pixel-aligned with the layer tokens they steer, and fuses them additively with &lambda;&nbsp;=&nbsp;0.9.
+      </figcaption>
+    </figure>
+
+    <div class="cards3">
+      <div class="card">
+        <div class="n">1</div>
+        <h3>Region-aware tokens</h3>
+        <p>Each layer is generated only inside its box, cutting the dominant cost from a global
+           <em>O(N&middot;HW)</em> to a local <em>O(&sum;H<sub>i</sub>W<sub>i</sub>)</em>. That is why 37 layers
+           still fit on one GPU.</p>
+      </div>
+      <div class="card">
+        <div class="n">2</div>
+        <h3>Aligned conditioning</h3>
+        <p>MLCA beats cross-attention and shared-KV injection by a wide margin (28.8 vs 14.8 PSNR), because
+           additive, box-aligned guidance preserves the tight spatial correspondence each layer needs.</p>
+      </div>
+      <div class="card">
+        <div class="n">3</div>
+        <h3>Dual-condition CFG</h3>
+        <p>The unconditional branch keeps the image and drops only the text. This anchors both branches to the
+           same layout and stops background colour from leaking into foreground layers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 2. MODE A / B ======================= -->
+<section class="alt">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Two ways in</span>
+      <h2 class="sec-title">Let the model find the layers, or say exactly what you want</h2>
+      <p class="sec-sub">
+        <b>Mode A</b> runs a fine-tuned Qwen3-VL-8B detector and decomposes with no human input.
+        <b>Mode B</b> takes boxes a designer drew. Same weights, same forward pass &mdash; only the boxes differ.
+        Click any layer tile to enlarge it.
+      </p>
+    </div>
+
+    <div class="app needs-demo" id="modes">
+      <div class="app-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="app-title">cld &mdash; box source comparison</span>
+      </div>
+      <div class="app-body">
+        <div class="tabs" id="mode-tabs" role="tablist" style="margin-bottom:16px"></div>
+
+        <div class="mode-grid">
+          <div class="pane">
+            <div class="pane-head">
+              <span>Mode A &middot; detector boxes</span>
+              <span style="color:var(--accent-2);letter-spacing:0;text-transform:none">automatic</span>
+            </div>
+            <div class="pane-body">
+              <div class="canvas-holder" id="mode-a-canvas"></div>
+              <div class="strip" id="mode-a-strip" style="margin-top:12px"></div>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-head">
+              <span>Mode B &middot; user boxes</span>
+              <span style="color:var(--accent);letter-spacing:0;text-transform:none">&lt; 30 s to annotate</span>
+            </div>
+            <div class="pane-body">
+              <div class="canvas-holder" id="mode-b-canvas"></div>
+              <div class="strip" id="mode-b-strip" style="margin-top:12px"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="mode-note" id="mode-note"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3. ROBUSTNESS ======================= -->
+<section id="robust">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Robustness</span>
+      <h2 class="sec-title">Sloppy boxes are fine</h2>
+      <p class="sec-sub">
+        Nobody draws pixel-accurate rectangles. Push every corner outward by up to 20% of the side length
+        and watch the layers hold &mdash; click any layer tile to inspect it full size.
+      </p>
+    </div>
+
+    <div class="app needs-demo">
+      <div class="app-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="app-title">cld &mdash; bounding-box perturbation</span>
+      </div>
+      <div class="app-body">
+        <div class="tabs" id="rb-tabs" role="tablist" style="margin-bottom:16px"></div>
+
+        <div class="rb">
+          <div>
+            <div class="pane">
+              <div class="pane-head"><span>Perturbed boxes</span></div>
+              <div class="pane-body">
+                <div class="canvas-holder" id="rb-canvas"></div>
+              </div>
+            </div>
+            <div style="padding:16px 2px 0">
+              <label for="rb-slider" style="font-size:12px;color:var(--panel-mut);font-weight:650">
+                Perturbation magnitude
+              </label>
+              <input class="rng" type="range" id="rb-slider" min="0" max="2" step="1" value="0" style="margin-top:8px">
+              <div class="ticks" id="rb-ticks"></div>
+            </div>
+            <div class="metric-row" id="rb-metrics"></div>
+          </div>
+
+          <div class="pane">
+            <div class="pane-head"><span>Resulting layers</span></div>
+            <div class="pane-body"><div class="strip" id="rb-strip"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 4. DESIGN STUDIO ======================= -->
+<section class="alt" id="studio">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">What designers actually do next</span>
+      <h2 class="sec-title">Edit the result like it was never flattened</h2>
+      <p class="sec-sub">
+        These are the real RGBA layers CLD produced, re-composited live in your browser. Drag an element,
+        scale it, hide it, duplicate it, restack it &mdash; the same operations the paper performs in PowerPoint.
+      </p>
+    </div>
+
+    <div class="app needs-demo">
+      <div class="app-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="app-title">cld studio &mdash; untitled.layers</span>
+        <span class="spacer"></span>
+        <div class="tabs" id="st-tabs" role="tablist"></div>
+      </div>
+
+      <div class="studio">
+        <div class="studio-main">
+          <div class="toolbar">
+            <button class="tbtn danger" id="st-del">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+              Delete
+            </button>
+            <button class="tbtn" id="st-dup">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Duplicate
+            </button>
+            <span class="tb-sep"></span>
+            <button class="preset" id="st-hide">Remove top element</button>
+            <button class="preset" id="st-shuffle">Shuffle layout</button>
+            <span class="tb-sep"></span>
+            <button class="tbtn" id="st-reset">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-5.6L3 10"/></svg>
+              Reset
+            </button>
+            <span class="spacer" style="flex:1"></span>
+            <button class="tbtn" id="st-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Export PNG
+            </button>
+          </div>
+
+          <div class="board-wrap">
+            <div class="board checker" id="st-board"></div>
+          </div>
+        </div>
+
+        <aside class="lpanel">
+          <div class="lpanel-head">
+            <span>Layers</span><span id="st-count" style="letter-spacing:0"></span>
+          </div>
+          <ul class="llist" id="st-list" style="list-style:none;margin:0"></ul>
+          <div class="hint">
+            Click an element to select &middot; drag to move &middot; corner handles scale,
+            edge handles stretch one axis &middot; the handle above the box rotates.<br>
+            <kbd>Shift</kbd> keeps the aspect ratio while scaling and snaps rotation to 15&deg; &middot;
+            <kbd>&larr;&rarr;&uarr;&darr;</kbd> nudge &middot; <kbd>Del</kbd> remove &middot;
+            drag <span style="color:#4b5368">&#9776;</span> to restack.
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5. EFFICIENCY + RESULTS ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Efficiency</span>
+      <h2 class="sec-title">Cost grows with content, not with canvas count</h2>
+      <p class="sec-sub">
+        Full-resolution multi-layer models pay for every layer at <em>H&times;W</em>. CLD pays only for the
+        boxes, so the curve stays almost flat where the baseline runs out of memory.
+      </p>
+    </div>
+
+    <div class="app" style="margin-bottom:34px">
+      <div class="app-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="app-title">inference cost &mdash; single GPU</span>
+      </div>
+      <div class="app-body">
+        <div class="eff">
+          <div>
+            <div id="eff-chart"></div>
+            <div class="legend">
+              <span><i style="background:#e0484b"></i>Qwen-Image-Layered</span>
+              <span><i style="background:#00a7bd"></i>CLD (ours) &mdash; min / avg / max over the test split</span>
+            </div>
+          </div>
+          <div>
+            <div class="metric-row" style="margin-top:0">
+              <div class="metric"><span>Avg layers</span><b>11.0</b></div>
+              <div class="metric"><span>Avg tokens</span><b>10,986</b></div>
+              <div class="metric"><span>Avg time</span><b>47.6 s</b></div>
+            </div>
+            <p style="color:var(--panel-mut);font-size:14px;line-height:1.65;margin-top:16px">
+              Measured over the 1,000-image PrismLayersPro test split. The baseline needs 24,576 tokens to
+              reach six layers and runs out of memory at seven; CLD averages 10,986 tokens for eleven layers
+              and peaks at 37 layers in 24,268 tokens.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-scroll">
+      <table class="res">
+        <thead>
+          <tr>
+            <th>Method</th><th>Bbox</th><th>Layers</th>
+            <th>RGB_L1 &darr;</th><th>IoU &uarr;</th><th>Overall &darr;</th>
+            <th>Semantic &uarr;</th><th>Visual &uarr;</th><th>Editability &uarr;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>LayerD</td><td>&mdash;</td><td>&mdash;</td><td>0.0504</td><td>0.5945</td><td>0.2280</td><td>3.978</td><td>3.808</td><td>4.043</td></tr>
+          <tr><td>Sam2 + Inpaint</td><td>GT</td><td>&mdash;</td><td>0.0614</td><td class="best">0.7546</td><td>0.1534</td><td>4.015</td><td>3.633</td><td>4.124</td></tr>
+          <tr><td>Qwen-Image-Layered</td><td>&mdash;</td><td>2</td><td>0.0435</td><td>0.6348</td><td>0.2044</td><td>4.022</td><td class="best">3.920</td><td>4.054</td></tr>
+          <tr><td>Qwen-Image-Layered</td><td>&mdash;</td><td>3</td><td>0.0255</td><td>0.6401</td><td>0.1927</td><td>4.019</td><td>3.900</td><td>4.084</td></tr>
+          <tr><td>Qwen-Image-Layered</td><td>&mdash;</td><td>4</td><td>0.0265</td><td>0.5919</td><td>0.2173</td><td>4.035</td><td>3.878</td><td>4.101</td></tr>
+          <tr><td>Qwen-Image-Layered</td><td>&mdash;</td><td>5</td><td>0.0324</td><td>0.5434</td><td>0.2445</td><td>4.043</td><td>3.864</td><td>4.104</td></tr>
+          <tr><td>Qwen-Image-Layered</td><td>&mdash;</td><td>6</td><td>0.0398</td><td>0.4934</td><td>0.2732</td><td>4.045</td><td>3.859</td><td>4.110</td></tr>
+          <tr class="ours"><td>CLD (ours)</td><td>Pred</td><td>&mdash;</td><td class="best">0.0164</td><td>0.7219</td><td class="best">0.1472</td><td class="best">4.099</td><td>3.913</td><td class="best">4.162</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fnote">
+      PrismLayersPro test split. <b>Bbox</b> is the box source (GT = ground truth, Pred = our fine-tuned
+      Qwen3-VL detector). <em>LayerD metrics</em> on the left, <em>Q-Insight</em> perceptual scores on the right.
+      Note that Qwen-Image-Layered degrades as the requested layer count rises (IoU 0.63 &rarr; 0.49), while
+      CLD stays anchored to its boxes.
+    </p>
+  </div>
+</section>
+
+<!-- ======================= GALLERY ======================= -->
+<section class="alt" id="gallery-sec">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Gallery</span>
+      <h2 class="sec-title">More decompositions</h2>
+      <p class="sec-sub">
+        A separate set of results. Hover the thumbnails under a card to step through that image&rsquo;s
+        layers; click any thumbnail, or the card itself, to enlarge it.
+      </p>
+    </div>
+    <div class="gal needs-demo" id="gallery"></div>
+  </div>
+</section>
+
+<footer class="ft">
+  <div class="wrap">
+    <p style="margin:0 0 6px">
+      This website is licensed under a
+      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0 License</a>.
+    </p>
+    <p style="margin:0">
+      Layout adapted from the <a href="https://nerfies.github.io/">Nerfies</a> project page
+      (<a href="https://github.com/nerfies/nerfies.github.io">source</a>).
+    </p>
+  </div>
+</footer>
+
+<script src="static/js/cld.js"></script>
+</body>
+</html>
