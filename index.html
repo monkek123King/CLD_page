@@ -16,38 +16,52 @@
 <link rel="icon" type="image/svg+xml" href="static/figures/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="static/css/cld.css">
 </head>
 
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
+<nav class="site-nav" aria-label="Main navigation">
+  <a class="nav-brand" href="#top"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m16 3 13 7-13 7L3 10 16 3Z" stroke="currentColor" stroke-width="1.6"/><path d="m3 16 13 7 13-7M3 22l13 7 13-7" stroke="currentColor" stroke-width="1.6"/></svg><span>Controllable Layer Decomposition</span></a>
+  <div class="nav-links"><a href="#explorer">Explore</a><a href="#method">Method</a><a href="#results">Results</a><a href="#gallery-sec">Gallery</a></div>
+  <a class="nav-cta" href="#studio">Try the Demo <span aria-hidden="true">↗</span></a>
+</nav>
 
 <!-- ======================= HERO ======================= -->
-<header class="hero">
-  <div class="hero-grid" aria-hidden="true"></div>
-  <div class="wrap" style="text-align:center">
-    <h1 class="title">Controllable <span class="grad">Layer Decomposition</span> for Reversible Multi-Layer Image Generation</h1>
-    <p class="subtitle">
-      Compositing is irreversible &mdash; once layers are flattened, layer-level editing is gone.
-      <b>CLD</b> puts it back: draw a box around anything in a finished raster image and get a clean,
-      editable RGBA layer, with a coherent background underneath.
-    </p>
-
+<header class="hero" id="top">
+  <div class="wrap">
+    <p class="hero-kicker">Controllable Layer Decomposition for Reversible Multi-Layer Image Generation</p>
+    <h1 class="title">One Image.<br><span>Every Layer.</span></h1>
+    <p class="subtitle">Recover editable RGBA layers from a finished image.<br class="desktop-break"> Guide the decomposition with bounding boxes.</p>
     <div class="btn-row">
-      <a class="btn" href="#studio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 3l14 9-14 9V3z"/></svg>
-        Try the interactive demo
-      </a>
+      <a class="btn" href="#studio">Try the Interactive Demo <span aria-hidden="true">↗</span></a>
+      <a class="text-link" href="#explorer">Explore the Layers <span aria-hidden="true">›</span></a>
     </div>
-
+    <div class="hero-visual" aria-label="A finished image separated into editable RGBA layers">
+      <div class="hero-input">
+        <img src="static/demo/case_25/input.webp" width="768" height="768" alt="Original colorful raster design" fetchpriority="high">
+        <span class="visual-label">The Original</span>
+      </div>
+      <span class="visual-arrow" aria-hidden="true">→</span>
+      <div class="hero-layers" aria-hidden="true">
+        <div class="hero-plate" style="--depth:0"><img src="static/demo/case_25/layers/L0.webp" alt="" width="768" height="768"></div>
+        <div class="hero-plate" style="--depth:1"><img src="static/demo/case_25/layers/L4.webp" alt="" width="768" height="768"></div>
+        <div class="hero-plate" style="--depth:2"><img src="static/demo/case_25/layers/L3.webp" alt="" width="768" height="768"></div>
+        <div class="hero-plate" style="--depth:3"><img src="static/demo/case_25/layers/L5.webp" alt="" width="768" height="768"></div>
+      </div>
+      <span class="visual-label layers-label">Independent RGBA Layers</span>
+    </div>
+    <p class="paper-title">Controllable Layer Decomposition for Reversible Multi-Layer Image Generation</p>
     <div class="stat-strip">
-      <div class="stat"><b>37</b><span>layers, single GPU</span></div>
-      <div class="stat"><b>48<small style="font-size:14px">s</small></b><span>avg. decomposition</span></div>
-      <div class="stat"><b>0.72</b><span>mask IoU (pred. boxes)</span></div>
-      <div class="stat"><b>&minus;0.6%</b><span>PSNR at 20% box noise</span></div>
+      <div class="stat"><b>37<span class="stat-unit"> layers</span></b><span>On a Single GPU</span></div>
+      <div class="stat"><b>48<span class="stat-unit"> sec</span></b><span>Average Decomposition</span></div>
+      <div class="stat"><b>0.72</b><span>Mask IoU · Predicted Boxes</span></div>
+      <div class="stat"><b>−0.6<span class="stat-unit">%</span></b><span>PSNR at 20% Box Noise</span></div>
     </div>
   </div>
 </header>
+<main id="main">
 
 <!-- ======================= 1. EXPLORER ======================= -->
 <section id="explorer">
@@ -128,7 +142,7 @@
 </section>
 
 <!-- ======================= METHOD ======================= -->
-<section>
+<section id="method">
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Method</span>
@@ -245,26 +259,24 @@
         <div class="tabs" id="rb-tabs" role="tablist" style="margin-bottom:16px"></div>
 
         <div class="rb">
-          <div>
-            <div class="pane">
-              <div class="pane-head"><span>Perturbed boxes</span></div>
-              <div class="pane-body">
-                <div class="canvas-holder" id="rb-canvas"></div>
-              </div>
+          <div class="pane rb-input">
+            <div class="pane-head"><span>Perturbed boxes</span></div>
+            <div class="pane-body">
+              <div class="canvas-holder" id="rb-canvas"></div>
             </div>
-            <div style="padding:16px 2px 0">
+            <div class="rb-controls">
               <label for="rb-slider" style="font-size:12px;color:var(--panel-mut);font-weight:650">
                 Perturbation magnitude
               </label>
               <input class="rng" type="range" id="rb-slider" min="0" max="2" step="1" value="0" style="margin-top:8px">
               <div class="ticks" id="rb-ticks"></div>
             </div>
-            <div class="metric-row" id="rb-metrics"></div>
           </div>
 
-          <div class="pane">
+          <div class="pane rb-output">
             <div class="pane-head"><span>Resulting layers</span></div>
             <div class="pane-body"><div class="strip" id="rb-strip"></div></div>
+            <div class="metric-row" id="rb-metrics" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -342,7 +354,7 @@
 </section>
 
 <!-- ======================= 5. EFFICIENCY + RESULTS ======================= -->
-<section>
+<section id="results">
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Efficiency</span>
@@ -428,6 +440,7 @@
   </div>
 </section>
 
+</main>
 <footer class="ft">
   <div class="wrap">
     <p style="margin:0 0 6px">
