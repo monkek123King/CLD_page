@@ -53,15 +53,15 @@ The assets come from the inference dumps under `CLD/results/`:
 - `results_perturb_<10,20>/`      — robustness levels
 
 and from the PrismLayersPro test split for the input images and captions.
-The export scripts used are `scan.py` (case selection), `extract_gt.py`
-(inputs + captions + GT boxes) and `export.py` (webp encode + manifest).
-Both `export.py` and `patch.py` regenerate `offline.js` automatically.
+The export scripts used are `scripts/scan.py` (case selection), `scripts/extract_gt.py`
+(inputs + captions + GT boxes) and `scripts/export.py` (webp encode + manifest).
+Both `scripts/export.py` and `scripts/patch.py` regenerate `offline.js` automatically.
 
 After manually changing `manifest.json` or studio layer images, refresh the
 local bundle with this standard-library-only command (no inference needed):
 
 ```bash
-python build_offline.py  # from the CLD_page directory
+python scripts/build_offline.py  # from the CLD_page directory
 ```
 
 Note: the page's earlier `static/figures/case_*/layer_*_rgba.png` assets were **RGB with the
@@ -70,6 +70,6 @@ composited. They have been removed; only `static/demo/` carries real RGBA.
 
 ## Swapping cases
 
-Edit the `CASES` list in `export.py` and re-run it; the page reads whatever
+Edit the `CASES` list in `scripts/export.py` and re-run it; the page reads whatever
 `manifest.json` contains (or its generated offline copy), so nothing in
 `index.html` needs to change.

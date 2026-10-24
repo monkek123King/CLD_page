@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def build_offline(demo_dir=None):
-    demo_dir = Path(demo_dir) if demo_dir is not None else Path(__file__).resolve().parent / 'static' / 'demo'
+    demo_dir = Path(demo_dir) if demo_dir is not None else Path(__file__).resolve().parents[1] / 'static' / 'demo'
     manifest = json.loads((demo_dir / 'manifest.json').read_text(encoding='utf-8'))
     images = {}
     # Ordinary <img> tags can read local files. Canvas export needs data URLs

@@ -1,9 +1,10 @@
 import os, json, glob, re, shutil
+from pathlib import Path
 from PIL import Image
 from build_offline import build_offline
 
 RES  = '/nas/malou/my/CLD_all/CLD/results'
-DEST = '/nas/malou/my/CLD_all/paper/page/static/demo'
+DEST = str(Path(__file__).resolve().parents[1] / 'static' / 'demo')
 CASES = [25, 199, 99, 185, 119, 226]
 PERTURB = ['10', '20']   # the paper reports perturbation up to 20%
 

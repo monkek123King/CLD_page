@@ -1,8 +1,9 @@
 import os, json
+from pathlib import Path
 from PIL import Image
 from build_offline import build_offline
 
-DEST = '/nas/malou/my/CLD_all/paper/page/static/demo'
+DEST = str(Path(__file__).resolve().parents[1] / 'static' / 'demo')
 gt = json.load(open('/tmp/clddemo/gt/meta.json'))
 man = json.load(open(f'{DEST}/manifest.json'))
 
